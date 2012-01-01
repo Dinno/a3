@@ -1,0 +1,2 @@
+cmd /K "C:\Program Files\Blender Foundation\Blender\blender.exe" C:\Users\denisk\Documents\workspace\a3\test\test.blend --background --python C:\Users\denisk\Documents\workspace\a3\blender\io_export_a3.py
+rem cmd /K "C:\Program Files\Blender Foundation\Blender\blender.exe" C:\Users\denisk\Documents\workspace\a3\test\test.blend --background --python C:\Users\denisk\Documents\workspace\a3\test\test.py

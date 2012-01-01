@@ -6,9 +6,7 @@
 assets
 sandbox
 video
-test
-/test.blend1
-test
-/test.blend2
-test
-/test.json
+test/test.blend1
+test/test.blend2
+test/test.json
+
