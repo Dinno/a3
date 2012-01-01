@@ -4,6 +4,11 @@
 .pydevproject
 .externalToolBuilders
 assets
-blender
 sandbox
 video
+test
+/test.blend1
+test
+/test.blend2
+test
+/test.json
