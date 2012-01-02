@@ -37,25 +37,35 @@ import json
 
 def fill_object(scene, object):
     obj = {
+        "name": "",
         "vertices": [],
         "faces": []
         }
+    obj["name"] = object.name
     if object.type == 'MESH':
         m = object.to_mesh(scene, True, "RENDER")
         for v in m.vertices:
             obj["vertices"].append([v.co[0], v.co[1], v.co[2]])
         for f in m.faces:
-            obj["faces"].append([f.vertices[0], f.vertices[1], f.vertices[2], f.vertices[3]])
+            if len(f.vertices) == 4:
+                obj["faces"].append([f.vertices[0], f.vertices[1], f.vertices[2], f.vertices[3]])
+            elif len(f.vertices) == 3:
+                obj["faces"].append([f.vertices[0], f.vertices[1], f.vertices[2]])
+            
+            
     #print(obj)
     return obj
 
 def do_export(context, filepath):
     #print(context.scene)
+    scene = {
+        "objects": []
+    }
     with open(filepath, 'wb') as file:
-        o = context.scene.objects[0]
-        #for o in context.scene.objects:
-        s = fill_object(context.scene, o)
-        file.write(json.dumps(s, indent = 4).encode(encoding='utf_8', errors='strict'))
+        #o = context.scene.objects[0]
+        for o in context.scene.objects:
+            scene["objects"].append(fill_object(context.scene, o))
+        file.write(json.dumps(scene, indent = 4).encode(encoding='utf_8', errors='strict'))
 
 
 class ExportA3JSON(bpy.types.Operator, ExportHelper):
