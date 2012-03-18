@@ -7,16 +7,9 @@
  */
 A3.Core.Objects.Mesh = function(data) {
 	
-	/* call the Object3D function
-	 * here to reset all the 'this'
-	 * variables, else all meshes
-	 * share the same matrices and
-	 * other properties.
-	 */
-	A3.Core.Object3D.call(this);
-	
 	// ensure valid data values
 	data                 = A3.Utility.checkValue(data, {});
+	data.name            = A3.Utility.checkValue(data.name, "");
 	data.vertexDataSize  = A3.Utility.checkValue(data.vertexDataSize, 3);
 	data.normalDataSize  = A3.Utility.checkValue(data.normalDataSize, 3);
 	data.colorDataSize   = A3.Utility.checkValue(data.colorDataSize, 3);
@@ -25,6 +18,14 @@ A3.Core.Objects.Mesh = function(data) {
 	data.blendType       = A3.Utility.checkValue(data.blendType, "normal");
 	data.depthTest       = A3.Utility.checkValue(data.depthTest, true);
 	
+	/* call the Object3D function
+	 * here to reset all the 'this'
+	 * variables, else all meshes
+	 * share the same matrices and
+	 * other properties.
+	 */
+	A3.Core.Object3D.call(this, data.name);
+
 	/**
 	 * @description The geometry abstraction. Useful to keep around if you update
 	 * the underlying data in any way.

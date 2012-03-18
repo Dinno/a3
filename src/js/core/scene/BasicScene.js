@@ -8,7 +8,7 @@
 A3.Core.Scene.BasicScene = function() {
 	
 	// reset what 'this' refers to
-	A3.Core.Object3D.call(this);
+	A3.Core.Object3D.call(this, "BasicScene");
 
 };
 

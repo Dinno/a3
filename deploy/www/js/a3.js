@@ -1293,13 +1293,13 @@ A3.V4 = A3.Core.Math.Vector4;/**
  *
  * @author Paul Lewis
  */
-A3.Core.Object3D = function() {
+A3.Core.Object3D = function(name) {
 
 	/**
 	 * @description The name of the object
 	 * @type String
 	 */
-	this.name = null;
+	this.name = !name ? null : name;
 
 	/**
 	 * @description The array of the children Object3Ds
@@ -1323,6 +1323,15 @@ A3.Core.Object3D = function() {
 	 * @type A3.Core.Math.Matrix4
 	 */
 	this.matrix = new A3.Core.Math.Matrix4();
+	
+	/**
+	 * @description Sets mode in which object does not update matrix
+	 * by scale, rotation and position. This mode is intended for 
+	 * use in animation, advanced object import, etc.
+	 *
+	 * @type Boolean
+	 */
+	this.matrixPriority = false;	
 
 	/**
 	 * @description The matrix that we use to
@@ -1453,29 +1462,41 @@ A3.Core.Object3D.prototype = {
 		// set, the parent is dirty or any of
 		// the vectors have changed this is dirty
 		this.dirty		= parentIsDirty           ||
-						        this.dirty              ||
-						        this.position.isDirty() ||
-						        this.rotation.isDirty() ||
-						        this.scale.isDirty();
+						        this.dirty;
+		
+		if(!this.matrixPriority) {
+			this.dirty		= this.dirty ||
+			        this.position.isDirty() ||
+			        this.rotation.isDirty() ||
+			        this.scale.isDirty();
+
+			// reset the dirty values to false
+			this.position.resetDirty();
+			this.rotation.resetDirty();
+			this.scale.resetDirty();
+		}
 
 		// if it has changed in any way we
 		// need to update the object's matrix
 		if(this.dirty) {
 
-			// reset it then we update it with the
-			// specifics of our object
-			this.matrix.identity();
-			this.matrix.setTranslationFromVector(this.position);
+			if(!this.matrixPriority) {
 
-			if(!this.target) {
-				this.matrix.setRotationFromVector(this.rotation);
-			} else {
-				// TODO This assumes they're both in the same coordinate space - need to fix
-				this.matrix.lookAt(this.position, this.target, this.up);
+				// reset it then we update it with the
+				// specifics of our object
+				this.matrix.identity();
+				this.matrix.setTranslationFromVector(this.position);
+	
+				if(!this.target) {
+					this.matrix.setRotationFromVector(this.rotation);
+				} else {
+					// TODO This assumes that position and target are both in the same coordinate space - need to fix
+					this.matrix.lookAt(this.position, this.target, this.up);
+				}
+	
+				this.matrix.scaleByVector(this.scale);
 			}
-
-			this.matrix.scaleByVector(this.scale);
-
+			
 			/**
 			 * if no parent world matrix
 			 * exists, i.e. this is the root
@@ -1522,10 +1543,6 @@ A3.Core.Object3D.prototype = {
 			this.children[childCount].update(this.matrixWorld, this.dirty);
 		}
 
-		// reset the dirty values to false
-		this.position.resetDirty();
-		this.rotation.resetDirty();
-		this.scale.resetDirty();
 		this.dirty = false;
 	},
 
@@ -2947,7 +2964,7 @@ A3.Renderer = A3.R = A3.Core.Render.Renderer;
 A3.Core.Scene.BasicScene = function() {
 	
 	// reset what 'this' refers to
-	A3.Core.Object3D.call(this);
+	A3.Core.Object3D.call(this, "BasicScene");
 
 };
 
@@ -3014,16 +3031,9 @@ A3.Camera = A3.Core.Camera.BasicCamera;
  */
 A3.Core.Objects.Mesh = function(data) {
 	
-	/* call the Object3D function
-	 * here to reset all the 'this'
-	 * variables, else all meshes
-	 * share the same matrices and
-	 * other properties.
-	 */
-	A3.Core.Object3D.call(this);
-	
 	// ensure valid data values
 	data                 = A3.Utility.checkValue(data, {});
+	data.name            = A3.Utility.checkValue(data.name, "");
 	data.vertexDataSize  = A3.Utility.checkValue(data.vertexDataSize, 3);
 	data.normalDataSize  = A3.Utility.checkValue(data.normalDataSize, 3);
 	data.colorDataSize   = A3.Utility.checkValue(data.colorDataSize, 3);
@@ -3032,6 +3042,14 @@ A3.Core.Objects.Mesh = function(data) {
 	data.blendType       = A3.Utility.checkValue(data.blendType, "normal");
 	data.depthTest       = A3.Utility.checkValue(data.depthTest, true);
 	
+	/* call the Object3D function
+	 * here to reset all the 'this'
+	 * variables, else all meshes
+	 * share the same matrices and
+	 * other properties.
+	 */
+	A3.Core.Object3D.call(this, data.name);
+
 	/**
 	 * @description The geometry abstraction. Useful to keep around if you update
 	 * the underlying data in any way.
@@ -4393,74 +4411,84 @@ A3.Plane = A3.Core.Objects.Primitives.Plane;
  * @param {String} url The URL to load
  * @param {Function} callback The callback to which the geometry should be passed
  */
+
+A3.Core.Remote.JSON = {
+
+	/**
+	 * Imports geometry from A3 JSON representation
+	 */
+	importGeometry: function(data) {
+		var 
+			vertexArray   = null,
+			vertices      = [],
+			faces         = [],
+			colors        = [],
+			faceArray     = null,
+			faceData      = null,
+			face          = null,
+			uvs           = [],
+			uvArray	      = null,
+			uvDataBlock		= null,
+			v             = 0,
+			f             = 0,
+			uv            = 0;
+
+		vertexArray    = data.vertices;
+		faceArray      = data.faces;
+		uvArray        = data.uv;
+		
+		// go through the vertices
+		for(v = 0; v < vertexArray.length; v++) {
+			vertexData = vertexArray[v];
+			vertices.push(
+				new A3.Vertex(vertexData[0], vertexData[1], vertexData[2])
+			);
+		}
+		
+		// now go through the faces
+		for(f = 0; f < faceArray.length; f++) {
+			faceData = faceArray[f];
+			
+			if(faceData.length === 3) {
+				face = new A3.Face3(faceData[0], faceData[1], faceData[2]);
+			} else if(faceData.length === 4) {
+				face = new A3.Face4(faceData[0], faceData[1], faceData[2], faceData[3]);
+			}
+			faces.push(face);
+		}
+		
+		// and the uv data
+		if(!!uvArray && !!uvArray.length) {
+			for(uv = 0; uv < uvArray.length; uv++) {
+				uvDataBlock = uvArray[uv];
+				uvs.push(
+					new A3.V2(uvDataBlock[0], uvDataBlock[1])
+				);
+			}
+		}
+		
+		// return a geometry
+		return new A3.Geometry({
+			vertices: vertices,
+			faces: faces,
+			colors: colors,
+			faceUVs: uvs
+		});
+	}
+};
+
 A3.Core.Remote.MeshLoader = function(url, callback) {
 	
-	var request			= new XMLHttpRequest(),
-		geometry      = null,
-		data          = null,
-		vertexArray   = null,
-		vertices      = [],
-		faces         = [],
-		colors        = [],
-		faceArray     = null,
-		faceData      = null,
-		face          = null,
-		uvs           = [],
-		uvArray	      = null,
-		uvDataBlock		= null,
-		v             = 0,
-		f             = 0,
-		uv            = 0;
-		
+	var request	= new XMLHttpRequest();
+
+
 	request.onreadystatechange = function() {
 		if(request.readyState === 4) {
 			data = JSON.parse(request.responseText);
 			
-			vertexArray    = data.vertices;
-			faceArray      = data.faces;
-			uvArray        = data.uv;
-			
-			// go through the vertices
-			for(v = 0; v < vertexArray.length; v++) {
-				vertexData = vertexArray[v];
-				vertices.push(
-					new A3.Vertex(vertexData[0], vertexData[1], vertexData[2])
-				);
-			}
-			
-			// now go through the faces
-			for(f = 0; f < faceArray.length; f++) {
-				faceData = faceArray[f];
-				
-				if(faceData.length === 3) {
-					face = new A3.Face3(faceData[0], faceData[1], faceData[2]);
-				} else if(faceData.length === 4) {
-					face = new A3.Face4(faceData[0], faceData[1], faceData[2], faceData[3]);
-				}
-				faces.push(face);
-			}
-			
-			// and the uv data
-			if(!!uvArray && !!uvArray.length) {
-				for(uv = 0; uv < uvArray.length; uv++) {
-					uvDataBlock = uvArray[uv];
-					uvs.push(
-						new A3.V2(uvDataBlock[0], uvDataBlock[1])
-					);
-				}
-			}
-			
-			// push into a geometry
-			geometry = new A3.Geometry({
-				vertices: vertices,
-				faces: faces,
-				colors: colors,
-				faceUVs: uvs
-			});
-			
 			// call the callback
 			if(!!callback) {
-				callback(geometry);
+				callback(A3.Core.Remote.JSON.importGeometry(data));
 			}
 		}
 	};

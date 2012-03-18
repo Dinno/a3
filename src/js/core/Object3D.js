@@ -5,13 +5,13 @@
  *
  * @author Paul Lewis
  */
-A3.Core.Object3D = function() {
+A3.Core.Object3D = function(name) {
 
 	/**
 	 * @description The name of the object
 	 * @type String
 	 */
-	this.name = null;
+	this.name = !name ? null : name;
 
 	/**
 	 * @description The array of the children Object3Ds
@@ -35,6 +35,15 @@ A3.Core.Object3D = function() {
 	 * @type A3.Core.Math.Matrix4
 	 */
 	this.matrix = new A3.Core.Math.Matrix4();
+	
+	/**
+	 * @description Sets mode in which object does not update matrix
+	 * by scale, rotation and position. This mode is intended for 
+	 * use in animation, advanced object import, etc.
+	 *
+	 * @type Boolean
+	 */
+	this.matrixPriority = false;	
 
 	/**
 	 * @description The matrix that we use to
@@ -165,29 +174,41 @@ A3.Core.Object3D.prototype = {
 		// set, the parent is dirty or any of
 		// the vectors have changed this is dirty
 		this.dirty		= parentIsDirty           ||
-						        this.dirty              ||
-						        this.position.isDirty() ||
-						        this.rotation.isDirty() ||
-						        this.scale.isDirty();
+						        this.dirty;
+		
+		if(!this.matrixPriority) {
+			this.dirty		= this.dirty ||
+			        this.position.isDirty() ||
+			        this.rotation.isDirty() ||
+			        this.scale.isDirty();
+
+			// reset the dirty values to false
+			this.position.resetDirty();
+			this.rotation.resetDirty();
+			this.scale.resetDirty();
+		}
 
 		// if it has changed in any way we
 		// need to update the object's matrix
 		if(this.dirty) {
 
-			// reset it then we update it with the
-			// specifics of our object
-			this.matrix.identity();
-			this.matrix.setTranslationFromVector(this.position);
+			if(!this.matrixPriority) {
 
-			if(!this.target) {
-				this.matrix.setRotationFromVector(this.rotation);
-			} else {
-				// TODO This assumes they're both in the same coordinate space - need to fix
-				this.matrix.lookAt(this.position, this.target, this.up);
+				// reset it then we update it with the
+				// specifics of our object
+				this.matrix.identity();
+				this.matrix.setTranslationFromVector(this.position);
+	
+				if(!this.target) {
+					this.matrix.setRotationFromVector(this.rotation);
+				} else {
+					// TODO This assumes that position and target are both in the same coordinate space - need to fix
+					this.matrix.lookAt(this.position, this.target, this.up);
+				}
+	
+				this.matrix.scaleByVector(this.scale);
 			}
-
-			this.matrix.scaleByVector(this.scale);
-
+			
 			/**
 			 * if no parent world matrix
 			 * exists, i.e. this is the root
@@ -234,10 +255,6 @@ A3.Core.Object3D.prototype = {
 			this.children[childCount].update(this.matrixWorld, this.dirty);
 		}
 
-		// reset the dirty values to false
-		this.position.resetDirty();
-		this.rotation.resetDirty();
-		this.scale.resetDirty();
 		this.dirty = false;
 	},
 
