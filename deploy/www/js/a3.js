@@ -2624,7 +2624,6 @@ A3.Core.Render.Renderer.prototype = {
 	 * @param {Float32Array} The camera's projection matrix flattened ready for WebGL
 	 */
 	renderObject: function(mesh) {
-
 		var meshShaderProgram       = mesh.shader.shaderProgram,
 
 			// standard attributes
@@ -2817,9 +2816,9 @@ A3.Core.Render.Renderer.prototype = {
 		}
 
 		if(!!mesh.shader.texture && mesh.shader.texture.isReady() && ~vertexUVAttribute) {
-
 			// upload the texture to the GPU
 			if(!mesh.shader.texture.data) {
+console.log(mesh.name);
 				this.processTexture(mesh.shader.texture);
 			}
 
@@ -2890,7 +2889,6 @@ A3.Core.Render.Renderer.prototype = {
 	 * @param {A3.Core.Render.Textures.Texture} texture The texture to work with
 	 */
 	processTexture: function(texture) {
-
 		// add the WebGL texture to the object
 		texture.data = this.gl.createTexture();
 
@@ -4435,8 +4433,13 @@ A3.Core.Remote.JSON = {
 
 		vertexArray    = data.vertices;
 		faceArray      = data.faces;
-		uvArray        = data.uv;
+		uvArray        = data.uvs;
 		
+//		alert('(data) name: ' + data.name
+//				+ ' vert:' + vertexArray.length
+//				+ ' faces:' + faceArray.length 
+//				+ ' uvs:' + uvArray.length);
+
 		// go through the vertices
 		for(v = 0; v < vertexArray.length; v++) {
 			vertexData = vertexArray[v];
@@ -4466,7 +4469,7 @@ A3.Core.Remote.JSON = {
 				);
 			}
 		}
-		
+
 		// return a geometry
 		return new A3.Geometry({
 			vertices: vertices,

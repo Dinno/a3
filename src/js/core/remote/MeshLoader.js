@@ -31,8 +31,13 @@ A3.Core.Remote.JSON = {
 
 		vertexArray    = data.vertices;
 		faceArray      = data.faces;
-		uvArray        = data.uv;
+		uvArray        = data.uvs;
 		
+//		alert('(data) name: ' + data.name
+//				+ ' vert:' + vertexArray.length
+//				+ ' faces:' + faceArray.length 
+//				+ ' uvs:' + uvArray.length);
+
 		// go through the vertices
 		for(v = 0; v < vertexArray.length; v++) {
 			vertexData = vertexArray[v];
@@ -62,7 +67,7 @@ A3.Core.Remote.JSON = {
 				);
 			}
 		}
-		
+
 		// return a geometry
 		return new A3.Geometry({
 			vertices: vertices,

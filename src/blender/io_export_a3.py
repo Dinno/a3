@@ -34,8 +34,80 @@ import os
 from bpy_extras.io_utils import ExportHelper
 from bpy.props import StringProperty
 import json
+from mathutils import *
 
-def fill_object(scene, object):
+
+def get_material_texture(material):
+    if material:
+        #Create a list of Textures that have type "IMAGE"
+        imageTextures = [material.texture_slots[textureSlot].texture for textureSlot in material.texture_slots.keys() if material.texture_slots[textureSlot].texture.type == "IMAGE"]
+        if len(imageTextures):
+            print(getattr(imageTextures[0].image, "source", ""))
+            print(imageTextures[0].image.filepath)
+        #Refine a new list with only image textures that have a file source
+        imageFiles = [bpy.path.basename(texture.image.filepath) for texture in imageTextures if getattr(texture.image, "source", "") == "FILE"]
+        if imageFiles:
+            return imageFiles[0]
+    return None
+
+def export_material(material):
+    return {
+        "diffuse": list(Vector(material.diffuse_color) * material.diffuse_intensity),
+        "specular": list(material.specular_color),
+        "specularity": material.specular_hardness,
+        "texture": get_material_texture(material) 
+    } 
+
+def export_materials(mesh):
+    if len(mesh.materials) == 0:
+        return None
+    else:
+        return export_material(mesh.materials[0]) 
+
+def export_matrix(matrix):
+    exportedMatrix = []
+    exportedMatrix.append(matrix[0].x)
+    exportedMatrix.append(matrix[1].x)
+    exportedMatrix.append(matrix[2].x)
+    exportedMatrix.append(matrix[3].x)
+    exportedMatrix.append(matrix[0].y)
+    exportedMatrix.append(matrix[1].y)
+    exportedMatrix.append(matrix[2].y)
+    exportedMatrix.append(matrix[3].y)
+    exportedMatrix.append(matrix[0].z)
+    exportedMatrix.append(matrix[1].z)
+    exportedMatrix.append(matrix[2].z)
+    exportedMatrix.append(matrix[3].z)
+    exportedMatrix.append(matrix[0].w)
+    exportedMatrix.append(matrix[1].w)
+    exportedMatrix.append(matrix[2].w)
+    exportedMatrix.append(matrix[3].w)
+    return exportedMatrix
+
+def export_faces(mesh):
+    faces = []
+    for f in mesh.faces:
+        vertices = f.vertices
+        if len(vertices) == 4:
+            faces.append([vertices[0], vertices[1], vertices[2], vertices[3]])
+        elif len(vertices) == 3:
+            faces.append([vertices[0], vertices[1], vertices[2]])
+    return faces
+    
+def export_normals(mesh):
+    normals = []
+    for f in mesh.faces:
+        #if Config.CoordinateSystem == 1:
+        #    Vertices = Vertices[::-1]
+        for v in [mesh.vertices[v] for v in f.vertices]:
+            if f.use_smooth:
+                normal = v.normal
+            else:
+                normal = f.normal
+            normals.append([normal[0], normal[1], normal[2]])
+    return normals
+
+def export_object(scene, object):
     if object.type == 'MESH':
         obj = {
             "name": None,
@@ -54,44 +126,14 @@ def fill_object(scene, object):
 #        obj["position"] = object.location[:]
 #        obj["rotation"] = object.rotation_euler[:]
 #        obj["scale"] = object.scale[:]
-        obj["matrix"].append(object.matrix_local[0].x)
-        obj["matrix"].append(object.matrix_local[1].x)
-        obj["matrix"].append(object.matrix_local[2].x)
-        obj["matrix"].append(object.matrix_local[3].x)
-        obj["matrix"].append(object.matrix_local[0].y)
-        obj["matrix"].append(object.matrix_local[1].y)
-        obj["matrix"].append(object.matrix_local[2].y)
-        obj["matrix"].append(object.matrix_local[3].y)
-        obj["matrix"].append(object.matrix_local[0].z)
-        obj["matrix"].append(object.matrix_local[1].z)
-        obj["matrix"].append(object.matrix_local[2].z)
-        obj["matrix"].append(object.matrix_local[3].z)
-        obj["matrix"].append(object.matrix_local[0].w)
-        obj["matrix"].append(object.matrix_local[1].w)
-        obj["matrix"].append(object.matrix_local[2].w)
-        obj["matrix"].append(object.matrix_local[3].w)
-        #print(object.matrix_local)
-        #print(object.matrix_local[0].x)
+        obj["matrix"] = export_matrix(object.matrix_local)
         if object.parent != None:
             obj["parent"] = object.parent.name 
         m = object.to_mesh(scene, True, "RENDER")
         for v in m.vertices:
             obj["vertices"].append([v.co[0], v.co[1], v.co[2]])
-        for f in m.faces:
-            vertices = list(f.vertices)
-            if len(vertices) == 4:
-                obj["faces"].append([vertices[0], vertices[1], vertices[2], vertices[3]])
-            elif len(vertices) == 3:
-                obj["faces"].append([vertices[0], vertices[1], vertices[2]])
-    
-            #if Config.CoordinateSystem == 1:
-            #    Vertices = Vertices[::-1]
-            for v in [m.vertices[v] for v in vertices]:
-                if f.use_smooth:
-                    normal = v.normal
-                else:
-                    normal = f.normal
-                obj["normals"].append([normal[0], normal[1], normal[2]])
+        obj["faces"] = export_faces(m)
+        obj["normals"] = export_normals(m)
         obj["doubleSided"] = m.show_double_sided
 
         if m.uv_textures:
@@ -109,7 +151,8 @@ def fill_object(scene, object):
                 #    Vertices = Vertices[::-1]
     #            for v in Vertices:
     #                Vertex[0], 1 - Vertex[1])
-    
+        obj["material"] = export_materials(m)
+        
         return obj
     else:
         return None
@@ -120,7 +163,7 @@ def do_export(context, filepath):
         "objects": []
     }
     for o in context.scene.objects:
-        jsonObj = fill_object(context.scene, o)
+        jsonObj = export_object(context.scene, o)
         if jsonObj != None:
             scene["objects"].append(jsonObj)
             
@@ -156,4 +199,5 @@ def unregister():
 
 if __name__ == "__main__":
     #register()
-    do_export(bpy.context, 'C:\\Users\\denisk\\Documents\\workspace\\a3\\test\\test.json')
+    #do_export(bpy.context, 'C:\\Users\\denisk\\Documents\\workspace\\a3\\test\\test.json')
+    do_export(bpy.context, os.path.basename(os.path.splitext(bpy.data.filepath)[0]) + '.json')
