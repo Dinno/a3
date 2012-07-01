@@ -2818,7 +2818,6 @@ A3.Core.Render.Renderer.prototype = {
 		if(!!mesh.shader.texture && mesh.shader.texture.isReady() && ~vertexUVAttribute) {
 			// upload the texture to the GPU
 			if(!mesh.shader.texture.data) {
-console.log(mesh.name);
 				this.processTexture(mesh.shader.texture);
 			}
 

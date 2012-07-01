@@ -40,10 +40,8 @@ from mathutils import *
 def get_material_texture(material):
     if material:
         #Create a list of Textures that have type "IMAGE"
-        imageTextures = [material.texture_slots[textureSlot].texture for textureSlot in material.texture_slots.keys() if material.texture_slots[textureSlot].texture.type == "IMAGE"]
-        if len(imageTextures):
-            print(getattr(imageTextures[0].image, "source", ""))
-            print(imageTextures[0].image.filepath)
+        imageTextures = [material.texture_slots[textureSlot].texture for textureSlot in material.texture_slots.keys() 
+                         if material.texture_slots[textureSlot].use and material.texture_slots[textureSlot].texture.type == "IMAGE"]
         #Refine a new list with only image textures that have a file source
         imageFiles = [bpy.path.basename(texture.image.filepath) for texture in imageTextures if getattr(texture.image, "source", "") == "FILE"]
         if imageFiles:
@@ -52,9 +50,11 @@ def get_material_texture(material):
 
 def export_material(material):
     return {
-        "diffuse": list(Vector(material.diffuse_color) * material.diffuse_intensity),
-        "specular": list(material.specular_color),
-        "specularity": material.specular_hardness,
+        "diffuseColor": list(material.diffuse_color),
+        "diffuseIntensity": material.diffuse_intensity,
+        "specularColor": list(material.specular_color),
+        "specularIntensity": material.specular_intensity,
+        "specularShininess": material.specular_hardness,
         "texture": get_material_texture(material) 
     } 
 
