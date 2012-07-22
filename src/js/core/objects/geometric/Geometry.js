@@ -39,8 +39,8 @@ A3.Core.Objects.Geometric.Geometry = function(data) {
    * @description The UV values per vertex
    * @type A3.Core.Math.Vector2[]
    */
-  this.uvs                   = (!!this.faceUVs ? new Array(this.vertices.length) : []);
-	
+	this.uvs                   = (!!this.faceUVs ? new Array(this.vertices.length) : []);
+
 	/**
 	 * @description Flags if the vertices have been updated
 	 * and if we need to update the WebGL buffers
@@ -124,8 +124,8 @@ A3.Core.Objects.Geometric.Geometry = function(data) {
 	 */
 	this.drawAsFlat            = data.flatShaded || false;
 	
-	// split out any shared vertices
-	this.separateFaces();
+	//// split out any shared vertices
+	//this.separateFaces();
 	
 	// calculate the vertex normals
 	this.calculateNormals();
@@ -264,7 +264,7 @@ A3.Core.Objects.Geometric.Geometry.prototype = {
 					    vertex.smoothGroup = [];
 					  }
 					  newVertex.smoothGroup = vertex.smoothGroup;
-          }
+					}
           
           // push on the original vert and
           // the new one to the smooth group

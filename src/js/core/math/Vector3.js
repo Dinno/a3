@@ -10,12 +10,6 @@
  * @param {Number} z The z value of the vector
  */
 A3.Core.Math.Vector3 = function(x,y,z) {
-
-	// default to the zero vector
-	this.x = this.oldX = 0;
-	this.y = this.oldY = 0;
-	this.z = this.oldZ = 0;
-
 	x = x || 0;
 	y = y || 0;
 	z = z || 0;
@@ -26,31 +20,21 @@ A3.Core.Math.Vector3 = function(x,y,z) {
 A3.Core.Math.Vector3.prototype = {
 
 	/**
-	 * Checks if this vector is dirty.
+	 * Checks if this vector is equal to another one.
 	 */
-	isDirty: function() {
-
-		var clean = (this.x === this.oldX) &&
-                (this.y === this.oldY) &&
-                (this.z === this.oldZ);
-
-		return (!clean);
-
+	isEqual: function(vector) {
+		return (this.x === vector.x) &&
+                (this.y === vector.y) &&
+                (this.z === vector.z);
 	},
 
 	/**
-	 * Resets what we consider to be the &quot;old&quot; values
-	 * for when we test isDirty()
-	 *
-	 * @see A3.Core.Math.Vector3#isDirty
+	 * Checks if this vector is NOT equal to another one.
 	 */
-	resetDirty: function() {
-
-		this.oldX = this.x;
-		this.oldY = this.y;
-		this.oldZ = this.z;
-
-		return this;
+	isNotEqual: function(vector) {
+		return (this.x !== vector.x) ||
+                (this.y !== vector.y) ||
+                (this.z !== vector.z);
 	},
 
 	/**

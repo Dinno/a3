@@ -80,6 +80,27 @@ A3.Core.Object3D = function(name) {
 	this.scale = new A3.Core.Math.Vector3(1,1,1);
 
 	/**
+	 * @description Position of this object as it was before last matrix recalculation 
+	 *
+	 * @type A3.Core.Math.Vector3
+	 */
+	this.oldPosition = new A3.Core.Math.Vector3(0,0,0);
+
+	/**
+	 * @description Rotation of this object as it was before last matrix recalculation
+	 *
+	 * @type A3.Core.Math.Vector3
+	 */
+	this.oldRotation = new A3.Core.Math.Vector3(0,0,0);
+
+	/**
+	 * @description Scale of this object as it was before last matrix recalculation
+	 *
+	 * @type A3.Core.Math.Vector3
+	 */
+	this.oldScale = new A3.Core.Math.Vector3(1,1,1);
+
+	/**
 	 * @description The object's up vector. Used for lookAt calculations
 	 *
 	 * @type A3.Core.Math.Vector3
@@ -177,15 +198,15 @@ A3.Core.Object3D.prototype = {
 						        this.dirty;
 		
 		if(!this.matrixPriority) {
-			this.dirty		= this.dirty ||
-			        this.position.isDirty() ||
-			        this.rotation.isDirty() ||
-			        this.scale.isDirty();
+			this.dirty = this.dirty ||
+			        this.position.isNotEqual(this.oldPosition) ||
+			        this.rotation.isNotEqual(this.oldRotation) ||
+			        this.scale.isNotEqual(this.oldScale);
 
 			// reset the dirty values to false
-			this.position.resetDirty();
-			this.rotation.resetDirty();
-			this.scale.resetDirty();
+			this.oldPosition.copy(this.position);
+			this.oldRotation.copy(this.rotation);
+			this.oldScale.copy(this.scale);
 		}
 
 		// if it has changed in any way we
