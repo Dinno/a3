@@ -22,33 +22,25 @@ A3.Core.Math.Vector2 = function(x,y) {
 A3.Core.Math.Vector2.prototype = {
 	
 	/**
-	 * Checks if this vector is dirty.
+	 * Checks if this vector is equal to another one.
 	 * 
-	 * @param {Boolean} reset Whether we should reset the dirty value
+	 * @param {A3.Core.Math.Vector2} vector to compare to
 	 */
-	isDirty: function(reset) {
-		
-		var clean = (this.x === this.oldX) &&
-                (this.y === this.oldY);
-	
-		return (!clean);
-		
+	isEqual: function(vector) {
+		return (this.x === vector.x) &&
+                (this.y === vector.y);
 	},
-	
+
 	/**
-	 * Resets what we consider to be the &quot;old&quot; values
-	 * for when we test isDirty()
+	 * Checks if this vector is NOT equal to another one.
 	 * 
-	 * @see A3.Core.Math.Vector2#isDirty
+	 * @param {A3.Core.Math.Vector2} vector to compare to
 	 */
-	resetDirty: function() {
-
-		this.oldX = this.x;
-		this.oldY = this.y;
-
-		return this;		
+	isNotEqual: function(vector) {
+		return (this.x !== vector.x) ||
+                (this.y !== vector.y);
 	},
-	
+
 	/**
 	 * Updates the vector's value
 	 * 
